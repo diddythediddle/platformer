@@ -196,81 +196,161 @@ public class Level {
 	//#############################################################################################################
 	//Your code goes here! 
 	//Please make sure you read the rubric/directions carefully and implement the solution recursively!
-	private void water(int col, int row, Map map, int fullness) {
-		
-	}
+    
+	
+	// Method to simulate the flow and spreading of water on a map
+// Precondition: col and row must be valid indices within the bounds of the map; fullness must be 0 to 3.
+// Postcondition: A Water tile is placed on the map at (col, row), and water may recursively spread to neighboring tiles based on fullness and terrain.
+private void water(int col, int row, Map map, int fullness) {
+    String name = "";
+    if (fullness == 3) {
+        name = "Full_water";
+    } else if (fullness == 2) {
+        name = "Half_water";
+    } else if (fullness == 1) {
+        name = "Quarter_water";
+    } else if (fullness == 0) {
+        name = "Falling_water";
+    }
 
+    Water w = new Water(col, row, tileSize, tileset.getImage(name), this, fullness);
+    map.addTile(col, row, w);
 
+    if (map.getTiles()[col][row] instanceof Water && fullness == 0 && row + 1 < map.getTiles()[0].length
+            && !(map.getTiles()[col][row + 1] instanceof Water) && map.getTiles()[col][row + 1].isSolid()) {
+        water(col, row, map, 3);
+    }
 
-	public void draw(Graphics g) {
-		g.translate((int) -camera.getX(), (int) -camera.getY());
+    if (row + 1 < map.getTiles()[0].length && !(map.getTiles()[col][row + 1] instanceof Water)
+            && !map.getTiles()[col][row + 1].isSolid()) {
+        water(col, row + 1, map, 0);
+    } else {
 
-		// Draw the map
-		for (int x = 0; x < map.getWidth(); x++) {
-			for (int y = 0; y < map.getHeight(); y++) {
-				Tile tile = map.getTiles()[x][y];
-				if (tile == null)
-					continue;
-				if (camera.isVisibleOnCamera(tile.getX(), tile.getY(), tile.getSize(), tile.getSize()))
-					tile.draw(g);
-			}
-		}
+        if (col + 1 < map.getTiles().length && !(map.getTiles()[col + 1][row] instanceof Water)
+                && !map.getTiles()[col + 1][row].isSolid()) {
+            if (fullness == 3) {
+                water(col + 1, row, map, 2);
+            }
+            if (fullness == 2) {
+                water(col + 1, row, map, 1);
+            }
+            if (fullness == 1) {
+                water(col + 1, row, map, 1);
+            }
+        }
 
-		// Draw the enemies
-		for (int i = 0; i < enemies.length; i++) {
-			enemies[i].draw(g);
-		}
+        if (col - 1 >= 0 && !(map.getTiles()[col - 1][row] instanceof Water)
+                && !map.getTiles()[col - 1][row].isSolid()) {
+            if (fullness == 3) {
+                water(col - 1, row, map, 2);
+            }
+            if (fullness == 2) {
+                water(col - 1, row, map, 1);
+            }
+            if (fullness == 1) {
+                water(col - 1, row, map, 1);
+            }
+        }
+    }
 
-		// Draw the player
-		player.draw(g);
+    if (row + 1 < map.getTiles()[0].length && !(map.getTiles()[col][row + 1] instanceof Water)
+            && !map.getTiles()[col][row + 1].isSolid()) {
+        water(col, row + 1, map, 0);
+    }
+}
 
-		// used for debugging
-		if (Camera.SHOW_CAMERA)
-			camera.draw(g);
+// Draws the entire game scene (tiles, player, enemies, camera view)
+// Precondition: Graphics object g must not be null, and camera, player, map, and enemies must be initialized.
+// Postcondition: The current frame of the game scene is rendered on the screen.
+public void draw(Graphics g) {
+    g.translate((int) -camera.getX(), (int) -camera.getY());
 
-		g.translate((int) +camera.getX(), (int) +camera.getY());
-	}
+    for (int x = 0; x < map.getWidth(); x++) {
+        for (int y = 0; y < map.getHeight(); y++) {
+            Tile tile = map.getTiles()[x][y];
+            if (tile == null)
+                continue;
+            if (camera.isVisibleOnCamera(tile.getX(), tile.getY(), tile.getSize(), tile.getSize()))
+                tile.draw(g);
+        }
+    }
 
-	// --------------------------Die-Listener
-	public void throwPlayerDieEvent() {
-		for (PlayerDieListener playerDieListener : dieListeners) {
-			playerDieListener.onPlayerDeath();
-		}
-	}
+    for (int i = 0; i < enemies.length; i++) {
+        enemies[i].draw(g);
+    }
 
-	public void addPlayerDieListener(PlayerDieListener listener) {
-		dieListeners.add(listener);
-	}
+    player.draw(g);
 
-	// ------------------------Win-Listener
-	public void throwPlayerWinEvent() {
-		for (PlayerWinListener playerWinListener : winListeners) {
-			playerWinListener.onPlayerWin();
-		}
-	}
+    if (Camera.SHOW_CAMERA)
+        camera.draw(g);
 
-	public void addPlayerWinListener(PlayerWinListener listener) {
-		winListeners.add(listener);
-	}
+    g.translate((int) +camera.getX(), (int) +camera.getY());
+}
 
-	// ---------------------------------------------------------Getters
-	public boolean isActive() {
-		return active;
-	}
+// Triggers an event notifying all registered listeners that the player has died
+// Precondition: dieListeners must be initialized.
+// Postcondition: All listeners are notified of the player's death.
+public void throwPlayerDieEvent() {
+    for (PlayerDieListener playerDieListener : dieListeners) {
+        playerDieListener.onPlayerDeath();
+    }
+}
 
-	public boolean isPlayerDead() {
-		return playerDead;
-	}
+// Adds a listener to be notified when the player dies
+// Precondition: listener must not be null.
+// Postcondition: The listener is added to dieListeners.
+public void addPlayerDieListener(PlayerDieListener listener) {
+    dieListeners.add(listener);
+}
 
-	public boolean isPlayerWin() {
-		return playerWin;
-	}
+// Triggers an event notifying all registered listeners that the player has won
+// Precondition: winListeners must be initialized.
+// Postcondition: All listeners are notified of the player's win.
+public void throwPlayerWinEvent() {
+    for (PlayerWinListener playerWinListener : winListeners) {
+        playerWinListener.onPlayerWin();
+    }
+}
 
-	public Map getMap() {
-		return map;
-	}
+// Adds a listener to be notified when the player wins
+// Precondition: listener must not be null.
+// Postcondition: The listener is added to winListeners.
+public void addPlayerWinListener(PlayerWinListener listener) {
+    winListeners.add(listener);
+}
 
-	public Player getPlayer() {
-		return player;
-	}
+// Checks if the game is currently active
+// Precondition: None.
+// Postcondition: Returns true if the game is active, false otherwise.
+public boolean isActive() {
+    return active;
+}
+
+// Checks if the player is dead
+// Precondition: None.
+// Postcondition: Returns true if the player is dead, false otherwise.
+public boolean isPlayerDead() {
+    return playerDead;
+}
+
+// Checks if the player has won the game
+// Precondition: None.
+// Postcondition: Returns true if the player has won, false otherwise.
+public boolean isPlayerWin() {
+    return playerWin;
+}
+
+// Returns the current game map
+// Precondition: None.
+// Postcondition: Returns the map object being used in the game.
+public Map getMap() {
+    return map;
+}
+
+// Returns the player object
+// Precondition: None.
+// Postcondition: Returns the player instance currently in the game.
+public Player getPlayer() {
+    return player;
+}
 }
