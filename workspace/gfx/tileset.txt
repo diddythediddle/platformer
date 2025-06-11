@@ -22,3 +22,4 @@ tileSize=10
 19,Full_water,0,2
 20,Half_water,1,2
 21,Quarter_water,2,2
+22,DoubleJumpPowerup,3,2
